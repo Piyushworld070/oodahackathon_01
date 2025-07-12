@@ -1,0 +1,1079 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Skill Swap Platform</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Custom scrollbar for lists */
+    .scrollbar-thin::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+      background-color: #a0aec0;
+      border-radius: 3px;
+    }
+
+    .rating {
+      color: #fbbf24;
+    }
+
+    .tag {
+      display: inline-block;
+      background-color: #e0e7ff;
+      color: #4338ca;
+      font-weight: 600;
+      padding: 0.15rem 0.5rem;
+      margin-right: 0.3rem;
+      margin-bottom: 0.2rem;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      user-select: none;
+    }
+  </style>
+</head>
+
+<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
+  <header class="bg-indigo-700 text-white">
+    <div class="max-w-6xl mx-auto px-5 py-4 flex justify-between items-center">
+      <h1 class="text-2xl font-extrabold tracking-tight select-none">Skill Swap Platform</h1>
+      <button id="loginBtn" class="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded transition"
+        aria-label="Login or Signup">Login</button>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-5 py-8 flex-grow flex flex-col">
+    <section id="searchSection" class="mb-6 flex flex-col sm:flex-row sm:items-center gap-3">
+      <select id="availabilityFilter"
+        class="rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full sm:w-48">
+        <option value="">Filter by Availability</option>
+        <option value="weekends">Weekends</option>
+        <option value="evenings">Evenings</option>
+        <option value="mornings">Mornings</option>
+        <option value="anytime">Anytime</option>
+      </select>
+      <input type="text" id="skillSearch" placeholder="Search by skill (e.g. Photoshop, Excel)"
+        class="flex-grow rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+      <button id="searchBtn"
+        class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded transition w-full sm:w-auto">Search</button>
+    </section>
+
+    <section id="profilesList" class="flex flex-col space-y-4">
+      <!-- Dynamically populated -->
+    </section>
+
+    <nav id="pagination" class="mt-8 flex justify-center space-x-2 select-none" aria-label="Pagination">
+      <!-- Pagination buttons dynamically populated -->
+    </nav>
+  </main>
+
+  <!-- Login/Signup Modal -->
+  <div id="loginModal" tabindex="-1"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 px-4">
+    <div
+      class="bg-white rounded-lg max-w-md w-full shadow-lg p-6 relative text-gray-900 animate-fadeIn dark:text-gray-100 dark:bg-gray-800">
+      <button id="closeLoginModal"
+        class="absolute top-3 right-3 text-gray-600 hover:text-gray-900 dark:hover:text-white font-bold text-xl"
+        aria-label="Close Login Modal">&times;</button>
+      <h2 class="text-xl font-bold mb-4 text-center">Login or Signup</h2>
+      <form id="loginForm" class="space-y-4" novalidate>
+        <label for="usernameInput" class="block font-semibold">
+          Username
+          <input type="text" id="usernameInput" name="username" autocomplete="username"
+            class="w-full rounded border border-gray-300 px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            required />
+        </label>
+        <label for="passwordInput" class="block font-semibold">
+          Password
+          <input type="password" id="passwordInput" name="password" autocomplete="current-password"
+            class="w-full rounded border border-gray-300 px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            required />
+        </label>
+        <button type="submit"
+          class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded transition">Log
+          in</button>
+      </form>
+      <p class="text-sm mt-4 text-center text-gray-600 dark:text-gray-400">Demo login only. No signup required.</p>
+    </div>
+  </div>
+
+  <!-- Profile private notice -->
+  <div id="privateNoticeToast"
+    class="fixed bottom-6 right-6 bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded shadow hidden"
+    role="alert">
+    <strong class="font-bold">Private Profile</strong>
+    <span class="block sm:inline">This profile is private and not visible publicly.</span>
+  </div>
+
+  <!-- Swap Requests Modal -->
+  <div id="swapRequestsModal" tabindex="-1"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 px-4">
+    <div
+      class="bg-white rounded-lg max-w-lg w-full shadow-lg p-6 relative text-gray-900 dark:text-gray-100 dark:bg-gray-800 max-h-[80vh] overflow-y-auto">
+      <button id="closeSwapRequestsModal"
+        class="absolute top-3 right-3 text-gray-600 hover:text-gray-900 dark:hover:text-white font-bold text-xl"
+        aria-label="Close Swap Requests Modal">&times;</button>
+      <h2 class="text-xl font-bold mb-4 text-center">Your Swap Requests</h2>
+      <div id="swapRequestsContainer" class="space-y-4">
+        <!-- Filled dynamically -->
+      </div>
+    </div>
+  </div>
+
+
+
+
+  <!-- Profile Form Modal -->
+  <div id="profileModal" tabindex="-1"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 px-4">
+    <div
+      class="bg-white rounded-lg max-w-md w-full shadow-lg p-6 relative text-gray-900 animate-fadeIn dark:text-gray-100 dark:bg-gray-800">
+      <button id="closeProfileModal"
+        class="absolute top-3 right-3 text-gray-600 hover:text-gray-900 dark:hover:text-white font-bold text-xl"
+        aria-label="Close Profile Modal">&times;</button>
+      <h2 class="text-xl font-bold mb-4 text-center">Profile Information</h2>
+      <form id="profileForm" class="space-y-4" novalidate>
+        <label for="profilePhoto" class="block font-semibold">
+          Profile Photo URL
+          <input type="text" id="profilePhoto" name="profilePhoto"
+            class="w-full rounded border border-gray-300 px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </label>
+        <label for="name" class="block font-semibold">
+          Name
+          <input type="text" id="name" name="name"
+            class="w-full rounded border border-gray-300 px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </label>
+        <label for="contactNo" class="block font-semibold">
+          Contact No
+          <input type="text" id="contactNo" name="contactNo"
+            class="w-full rounded border border-gray-300 px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </label>
+        <label for="email" class="block font-semibold">
+          Email
+          <input type="email" id="email" name="email"
+            class="w-full rounded border border-gray-300 px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </label>
+        <label for="dob" class="block font-semibold">
+          Date of Birth
+          <input type="date" id="dob" name="dob"
+            class="w-full rounded border border-gray-300 px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </label>
+        <label for="address" class="block font-semibold">
+            Address
+            <input type="text" id="address" name="address"
+              class="w-full rounded border border-gray-300 px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </label>
+          <label for="school" class="block font-semibold">
+            School/University
+            <input type="text" id="school" name="school"
+              class="w-full rounded border border-gray-300 px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </label>
+          <label for="degree" class="block font-semibold">
+            Degree
+            <input type="text" id="degree" name="degree"
+              class="w-full rounded border border-gray-300 px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </label>
+          <label for="marks" class="block font-semibold">
+            Marks
+            <input type="text" id="marks" name="marks"
+              class="w-full rounded border border-gray-300 px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </label>
+          <label for="skills" class="block font-semibold">
+            Skills
+            <input type="text" id="skills" name="skills"
+            class="w-full rounded border border-gray-300 px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </label>
+        <label for="loginDate" class="block font-semibold">
+          Date of Login
+          <input type="date" id="loginDate" name="loginDate"
+            class="w-full rounded border border-gray-300 px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </label>
+        <button type="submit"
+          class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded transition">Save</button>
+      </form>
+    </div>
+  </div>
+
+ <!-- Profile private notice -->
+ <div id="privateNoticeToast"
+ class="fixed bottom-6 right-6 bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded shadow hidden"
+ role="alert">
+ <strong class="font-bold">Private Profile</strong>
+ <span class="block sm:inline">This profile is private and not visible publicly.</span>
+</div>
+
+<!-- Swap Requests Modal -->
+  <div id="swapRequestsModal" tabindex="-1"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 px-4">
+    <div
+      class="bg-white rounded-lg max-w-lg w-full shadow-lg p-6 relative text-gray-900 dark:text-gray-100 dark:bg-gray-800 max-h-[80vh] overflow-y-auto">
+      <button id="closeSwapRequestsModal"
+        class="absolute top-3 right-3 text-gray-600 hover:text-gray-900 dark:hover:text-white font-bold text-xl"
+        aria-label="Close Swap Requests Modal">&times;</button>
+      <h2 class="text-xl font-bold mb-4 text-center">Your Swap Requests</h2>
+      <div id="swapRequestsContainer" class="space-y-4">
+        <!-- Filled dynamically -->
+      </div>
+    </div>
+  </div>
+
+
+
+  <footer class="bg-white shadow mt-8">
+    <nav class="max-w-6xl mx-auto px-5 py-4 flex justify-around">
+      <!-- Home -->
+      <a href="#" class="flex flex-col items-center text-gray-600 hover:text-indigo-600">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
+          viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M3 9.75L12 4l9 5.75V20a1 1 0 01-1 1h-5.25a.75.75 0 01-.75-.75v-4.5a.75.75 0 00-.75-.75h-3a.75.75 0 00-.75.75v4.5a.75.75 0 01-.75.75H4a1 1 0 01-1-1V9.75z" />
+        </svg>
+        <span class="text-xs">Home</span>
+      </a>
+  
+      <!-- Explore -->
+      <a href="https://en.wikipedia.org/w/index.php?search=explore+for+skill+for+developement&title=Special%3ASearch&ns0=1"
+        class="flex flex-col items-center text-gray-600 hover:text-indigo-600">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
+          viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M21 21l-4.35-4.35M10 18a8 8 0 100-16 8 8 0 000 16z" />
+        </svg>
+        <span class="text-xs">Explore</span>
+      </a>
+  
+      <!-- Courses -->
+      <a href="https://www.coursera.org/" class="flex flex-col items-center text-gray-600 hover:text-indigo-600">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
+          viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 14l9-5-9-5-9 5 9 5zm0 0v6m0 0l3-3m-3 3l-3-3" />
+        </svg>
+        <span class="text-xs">Courses</span>
+      </a>
+  
+      <!-- Profile -->
+      <a href="file:///Users/piyushgahlot/PROFIE.HTML/data.html" class="flex flex-col items-center text-gray-600 hover:text-indigo-600">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
+          viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M5.121 17.804A9 9 0 1112 21a9 9 0 01-6.879-3.196zM15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+        <span class="text-xs">Profile</span>
+      </a>
+    </nav>
+  </footer>
+  
+
+
+  <script>
+    (() => {
+      /* Data simulation */
+
+      // Users database simulation
+      const users = [
+        
+      {
+          id: 1,
+          name: "Marc Demo",
+          location: "New York",
+          profilePhoto: "https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/19eb0957-b2d7-4284-bad6-aed403810d2e.png",
+          skillsOffered: ["JavaScript", "Python"],
+          skillsWanted: ["Photoshop", "Graphic Designer"],
+          availability: ["weekends", "evenings"],
+          isPublic: true,
+          rating: 3.9,
+        },
+        {
+          id: 2,
+          name: "Michell",
+          location: "San Francisco",
+          profilePhoto: "https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/bd32c478-1ac1-4788-a0aa-7173279da80b.png",
+          skillsOffered: ["JavaScript", "Python"],
+          skillsWanted: ["Photoshop", "Graphic Designer"],
+          availability: ["mornings", "anytime"],
+          isPublic: true,
+          rating: 2.5,
+        },
+        {
+          id: 3,
+          name: "Joe Wills",
+          location: "Chicago",
+          profilePhoto: "https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/6d22b04c-8c10-441e-95de-c2a0979fa7ad.png",
+          skillsOffered: ["JavaScript", "Python"],
+          skillsWanted: ["Photoshop", "Graphic Designer"],
+          availability: ["weekends"],
+          isPublic: true,
+          rating: 4.0,
+        },
+        {
+          id: 4,
+          name: "Private User",
+          location: "Miami",
+          profilePhoto: "https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/f66f2e73-33c3-4b2e-af48-12bc9906f574.png",
+          skillsOffered: ["Excel", "Accounting"],
+          skillsWanted: ["JavaScript"],
+          availability: ["anytime"],
+          isPublic: false,
+          rating: 0,
+        },
+        {
+          id: 5,
+          name: "Marc Demo",
+          location: "New York",
+          profilePhoto: "https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/19eb0957-b2d7-4284-bad6-aed403810d2e.png",
+          skillsOffered: ["JavaScript", "Python"],
+          skillsWanted: ["Photoshop", "Graphic Designer"],
+          availability: ["weekends", "evenings"],
+          isPublic: true,
+          rating: 3.9,
+        },
+        {
+          id: 6,
+          name: "Marc Demo",
+          location: "New York",
+          profilePhoto: "https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/19eb0957-b2d7-4284-bad6-aed403810d2e.png",
+          skillsOffered: ["JavaScript", "Python"],
+          skillsWanted: ["Photoshop", "Graphic Designer"],
+          availability: ["weekends", "evenings"],
+          isPublic: true,
+          rating: 3.9,
+        },
+        {
+          id: 7,
+          name: "Marc Demo",
+          location: "New York",
+          profilePhoto: "https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/19eb0957-b2d7-4284-bad6-aed403810d2e.png",
+          skillsOffered: ["JavaScript", "Python"],
+          skillsWanted: ["Photoshop", "Graphic Designer"],
+          availability: ["weekends", "evenings"],
+          isPublic: true,
+          rating: 3.9,
+        },
+        {
+          id: 8,
+          name: "Marc Demo",
+          location: "New York",
+          profilePhoto: "https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/19eb0957-b2d7-4284-bad6-aed403810d2e.png",
+          skillsOffered: ["JavaScript", "Python"],
+          skillsWanted: ["Photoshop", "Graphic Designer"],
+          availability: ["weekends", "evenings"],
+          isPublic: true,
+          rating: 3.9,
+        },
+        {
+          id: 9,
+          name: "Marc Demo",
+          location: "New York",
+          profilePhoto: "https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/19eb0957-b2d7-4284-bad6-aed403810d2e.png",
+          skillsOffered: ["JavaScript", "Python"],
+          skillsWanted: ["Photoshop", "Graphic Designer"],
+          availability: ["weekends", "evenings"],
+          isPublic: true,
+          rating: 3.9,
+        },
+        {
+          id: 10,
+          name: "Marc Demo",
+          location: "New York",
+          profilePhoto: "https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/19eb0957-b2d7-4284-bad6-aed403810d2e.png",
+          skillsOffered: ["JavaScript", "Python"],
+          skillsWanted: ["Photoshop", "Graphic Designer"],
+          availability: ["weekends", "evenings"],
+          isPublic: true,
+          rating: 3.9,
+        },
+        {
+          id: 11,
+          name: "Marc Demo",
+          location: "New York",
+          profilePhoto: "https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/19eb0957-b2d7-4284-bad6-aed403810d2e.png",
+          skillsOffered: ["JavaScript", "Python"],
+          skillsWanted: ["Photoshop", "Graphic Designer"],
+          availability: ["weekends", "evenings"],
+          isPublic: true,
+          rating: 3.9,
+        },
+        {
+          id: 12,
+          name: "Marc Demo",
+          location: "New York",
+          profilePhoto: "https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/19eb0957-b2d7-4284-bad6-aed403810d2e.png",
+          skillsOffered: ["JavaScript", "Python"],
+          skillsWanted: ["Photoshop", "Graphic Designer"],
+          availability: ["weekends", "evenings"],
+          isPublic: true,
+          rating: 3.9,
+        },
+      ];
+
+      // Pagination configuration
+      const PROFILES_PER_PAGE = 3;
+
+      // Logged-in user simulation (null if not logged in)
+      let loggedInUser = null;
+
+      // Swap requests database simulation
+      // Each request: { id, fromUserId, toUserId, status: 'pending'|'accepted'|'rejected', timestamp, feedback }
+      let swapRequests = [];
+
+      /* UI references */
+      const profilesList = document.getElementById("profilesList");
+      const availabilityFilter = document.getElementById("availabilityFilter");
+      const skillSearch = document.getElementById("skillSearch");
+      const searchBtn = document.getElementById("searchBtn");
+      const loginBtn = document.getElementById("loginBtn");
+      const loginModal = document.getElementById("loginModal");
+      const closeLoginModalBtn = document.getElementById("closeLoginModal");
+      const loginForm = document.getElementById("loginForm");
+      const privateNoticeToast = document.getElementById("privateNoticeToast");
+      const pagination = document.getElementById("pagination");
+      const swapRequestsModal = document.getElementById("swapRequestsModal");
+      const closeSwapRequestsModal = document.getElementById("closeSwapRequestsModal");
+      const swapRequestsContainer = document.getElementById("swapRequestsContainer");
+
+      /* Current state */
+      let filteredUsers = [];
+      let currentPage = 1;
+
+      /* Utility functions */
+
+      /**
+       * Shows the toast private profile notice for 2.5 seconds.
+       */
+      function showPrivateNotice() {
+        if (privateNoticeToast.classList.contains("hidden")) {
+          privateNoticeToast.classList.remove("hidden");
+          setTimeout(() => {
+            privateNoticeToast.classList.add("hidden");
+          }, 2500);
+        }
+      }
+
+      /**
+       * Simulates login success by username/password.
+       * Here, we accept any nonempty username and password for demo.
+       */
+      function doLogin(username, password) {
+        // Find user by username or create new user for demo purposes
+        let user = users.find((u) => u.name.toLowerCase() === username.toLowerCase());
+        if (!user) {
+          // create new user with default data
+          user = {
+            id: users.length + 1,
+            name: username,
+            location: "",
+            profilePhoto: null,
+            skillsOffered: [],
+            skillsWanted: [],
+            availability: [],
+            isPublic: true,
+            rating: 0,
+          };
+          users.push(user);
+        }
+        loggedInUser = user;
+        // Close modal
+        closeLoginModal();
+        updateLoginStatusUI();
+        loadProfilesForPage(1);
+        showSwapRequestsModalIfAny();
+      }
+
+      /**
+       * Closes the login modal and resets form.
+       */
+      function closeLoginModal() {
+        loginModal.classList.add("hidden");
+        loginForm.reset();
+      }
+
+      /**
+       * Opens the login modal.
+       */
+      function openLoginModal() {
+        loginModal.classList.remove("hidden");
+        document.getElementById("usernameInput").focus();
+      }
+
+      /**
+       * Updates the login button UI, changes to "Logout" if logged in.
+       */
+      function updateLoginStatusUI() {
+        if (loggedInUser) {
+          loginBtn.textContent = `Logout (${loggedInUser.name})`;
+          loginBtn.classList.remove("bg-indigo-500");
+          loginBtn.classList.add("bg-red-600");
+        } else {
+          loginBtn.textContent = "Login";
+          loginBtn.classList.remove("bg-red-600");
+          loginBtn.classList.add("bg-indigo-500");
+        }
+      }
+
+      /**
+       * Filters users according to search and availability filters.
+       */
+      function filterUsers() {
+        let skillQuery = skillSearch.value.trim().toLowerCase();
+        let availabilityValue = availabilityFilter.value;
+
+        // Filter users: Only public profiles visible to everyone
+        // If logged in, user can see themselves and manage requests
+        filteredUsers = users.filter(user => {
+          if (!user.isPublic && (!loggedInUser || loggedInUser.id !== user.id)) {
+            return false;
+          }
+          // Filter by availability if selected
+          if (availabilityValue && !user.availability.includes(availabilityValue)) {
+            return false;
+          }
+          // Filter by skills offered or wanted if skill searched
+          if (skillQuery) {
+            const matchesSkill =
+              user.skillsOffered.some(skill => skill.toLowerCase().includes(skillQuery)) ||
+              user.skillsWanted.some(skill => skill.toLowerCase().includes(skillQuery));
+            if (!matchesSkill) {
+              return false;
+            }
+          }
+          return true;
+        });
+
+        // Reset to page 1 after filtering
+        currentPage = 1;
+      }
+
+      /**
+       * Renders user profiles in the list according to current filteredUsers and page.
+       */
+      function loadProfilesForPage(page) {
+        currentPage = page;
+        profilesList.innerHTML = "";
+        if (filteredUsers.length === 0) {
+          profilesList.innerHTML = `<p class="text-center text-gray-600 select-none">No profiles match your search criteria.</p>`;
+          pagination.innerHTML = "";
+          return;
+        }
+
+        const startIdx = (page - 1) * PROFILES_PER_PAGE;
+        const endIdx = startIdx + PROFILES_PER_PAGE;
+        const usersPage = filteredUsers.slice(startIdx, endIdx);
+
+        usersPage.forEach(user => {
+          const userCard = createUserCard(user);
+          profilesList.appendChild(userCard);
+        });
+
+        renderPagination(filteredUsers.length, PROFILES_PER_PAGE, page);
+      }
+  
+  
+      /**
+       * Renders pagination buttons.
+       */
+      function renderPagination(totalItems, itemsPerPage, currentPage) {
+        pagination.innerHTML = "";
+
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+        if (totalPages <= 1) return;
+
+        // Prev button
+        const prevBtn = document.createElement("button");
+        prevBtn.textContent = "<";
+        prevBtn.disabled = currentPage === 1;
+        prevBtn.className = paginationButtonClass(prevBtn.disabled);
+        prevBtn.addEventListener("click", () => {
+          if (currentPage > 1) loadProfilesForPage(currentPage - 1);
+        });
+        pagination.appendChild(prevBtn);
+
+        // Page numbers - show max 7 + dots if needed
+        let pagesShown = [];
+        if (totalPages <= 7) {
+          pagesShown = [...Array(totalPages).keys()].map(i => i + 1);
+        } else {
+          if (currentPage <= 4) {
+            pagesShown = [1, 2, 3, 4, 5, "...", totalPages];
+          } else if (currentPage > totalPages - 4) {
+            pagesShown = [1, "...", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+          } else {
+            pagesShown = [1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages];
+          }
+        }
+
+        pagesShown.forEach(p => {
+          if (p === "...") {
+            const dots = document.createElement("span");
+            dots.textContent = "...";
+            dots.className = "px-2 py-1 select-none text-gray-500";
+            pagination.appendChild(dots);
+          } else {
+            const btn = document.createElement("button");
+            btn.textContent = p;
+            btn.className = paginationButtonClass(p === currentPage);
+            if (p !== currentPage) {
+              btn.addEventListener("click", () => loadProfilesForPage(p));
+            }
+            pagination.appendChild(btn);
+          }
+        });
+
+        // Next button
+        const nextBtn = document.createElement("button");
+        nextBtn.textContent = ">";
+        nextBtn.disabled = currentPage >= totalPages;
+        nextBtn.className = paginationButtonClass(nextBtn.disabled);
+        nextBtn.addEventListener("click", () => {
+          if (currentPage < totalPages) loadProfilesForPage(currentPage + 1);
+        });
+        pagination.appendChild(nextBtn);
+      }
+
+      /**
+       * Returns class string for pagination buttons.
+       */
+      function paginationButtonClass(disabledOrActive) {
+        if (disabledOrActive === true) {
+          return "px-3 py-1 rounded bg-indigo-600 text-white select-none cursor-default disabled:opacity-50";
+        } else if (disabledOrActive === false) {
+          return "px-3 py-1 rounded bg-indigo-100 hover:bg-indigo-300 cursor-pointer select-none";
+        } else {
+          // active page style
+          return "px-3 py-1 rounded bg-indigo-600 text-white cursor-default select-none";
+        }
+      }
+
+      /**
+       * Creates a user card element.
+       */
+      function createUserCard(user) {
+        const card = document.createElement("article");
+        card.className = "bg-white rounded-lg shadow-md p-4 flex items-center space-x-4";
+
+        // Profile Photo with fallback and alt text
+        const photoWrapper = document.createElement("div");
+        photoWrapper.className = "shrink-0";
+        const photo = document.createElement("img");
+        photo.src = user.profilePhoto ?? "https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/7b5972e2-38b0-4a03-b1d6-26308d843980.png";
+        photo.alt = `Profile photo of ${user.name}`;
+        photo.className = "rounded-full w-20 h-20 object-cover border border-indigo-300 shadow-sm bg-gray-100";
+        photo.onerror = function () {
+          this.src = "https://placehold.co/100x100/png?text=No+Photo";
+        };
+        photoWrapper.appendChild(photo);
+        card.appendChild(photoWrapper);
+
+        // Details container
+        const details = document.createElement("div");
+        details.className = "flex flex-col flex-grow min-w-0";
+
+        // Header row: Name and availability + location
+        const header = document.createElement("div");
+        header.className = "flex justify-between items-center flex-wrap gap-1";
+
+        const nameEl = document.createElement("h2");
+        nameEl.className = "text-lg font-semibold truncate";
+        nameEl.title = user.name;
+        nameEl.textContent = user.name;
+        header.appendChild(nameEl);
+
+        if (!user.isPublic) {
+          const privateSpan = document.createElement("span");
+          privateSpan.className = "text-sm px-2 py-0.5 rounded bg-yellow-200 text-yellow-900 font-semibold select-none";
+          privateSpan.textContent = "Private Profile";
+          header.appendChild(privateSpan);
+        }
+
+        details.appendChild(header);
+
+        // Location if available
+        if (user.location) {
+          const loc = document.createElement("p");
+          loc.className = "text-sm text-gray-500 truncate";
+          loc.textContent = user.location;
+          details.appendChild(loc);
+        }
+
+        // Skills offered
+        const offered = document.createElement("p");
+        offered.className = "mt-1 flex flex-wrap items-center gap-1 text-sm text-green-700";
+        offered.innerHTML = `<span class="font-semibold text-green-600 mr-1 select-none">Skills Offered =></span>`;
+        user.skillsOffered.forEach(skill => {
+          const skillSpan = document.createElement("span");
+          skillSpan.className = "inline-flex tag";
+          skillSpan.textContent = skill;
+          offered.appendChild(skillSpan);
+        });
+        details.appendChild(offered);
+
+        // Skills wanted
+        const wanted = document.createElement("p");
+        wanted.className = "flex flex-wrap items-center gap-1 text-sm text-blue-700";
+        wanted.innerHTML = `<span class="font-semibold text-blue-600 mr-1 select-none">Skills Wanted =></span>`;
+        user.skillsWanted.forEach(skill => {
+          const skillSpan = document.createElement("span");
+          skillSpan.className = "inline-flex tag";
+          skillSpan.textContent = skill;
+          wanted.appendChild(skillSpan);
+        });
+        details.appendChild(wanted);
+
+        // Availability shown as small badges
+        if (user.availability.length > 0) {
+          const availDiv = document.createElement("p");
+          availDiv.className = "mt-1 flex flex-wrap items-center gap-1 text-xs text-indigo-700";
+          availDiv.innerHTML = `<span class="font-semibold text-indigo-700 mr-1 select-none">Availability:</span>`;
+          user.availability.forEach(slot => {
+            const slotSpan = document.createElement("span");
+            slotSpan.className = "inline-flex rounded bg-indigo-200 px-2 py-0.5 select-none";
+            slotSpan.textContent = slot.charAt(0).toUpperCase() + slot.slice(1);
+            availDiv.appendChild(slotSpan);
+          });
+          details.appendChild(availDiv);
+        }
+
+        card.appendChild(details);
+
+        // Right container for rating and actions
+        const rightDiv = document.createElement("div");
+        rightDiv.className = "flex flex-col items-end justify-between h-full";
+
+        // Rating display
+        const ratingEl = document.createElement("div");
+        ratingEl.className = "text-yellow-500 font-semibold rating select-none";
+        ratingEl.textContent = user.rating > 0 ? `${user.rating.toFixed(1)}/5` : "No ratings";
+        rightDiv.appendChild(ratingEl);
+
+        // Request button or message
+        const canRequest = loggedInUser && loggedInUser.id !== user.id && user.isPublic;
+
+        const requestBtn = document.createElement("button");
+        requestBtn.textContent = "Request";
+        requestBtn.disabled = !canRequest;
+        requestBtn.className = canRequest
+          ? "bg-cyan-400 hover:bg-cyan-500 text-white font-semibold px-4 py-2 rounded transition select-none"
+          : "bg-gray-300 text-gray-600 cursor-not-allowed px-4 py-2 rounded select-none";
+
+        // Accessibility
+        requestBtn.setAttribute("aria-label", `Request skill swap with ${user.name}`);
+
+        requestBtn.addEventListener("click", () => handleRequestClick(user));
+
+        rightDiv.appendChild(requestBtn);
+
+        card.appendChild(rightDiv);
+
+        return card;
+      }
+
+      /**
+       * Handles click on Request button.
+       */
+      function handleRequestClick(user) {
+        if (!loggedInUser) {
+          openLoginModal();
+          return;
+        }
+        if (!user.isPublic) {
+          alert("This profile is private and cannot be requested.");
+          return;
+        }
+        // Check if a pending or accepted swap request already exists from loggedInUser to this user
+        const existingRequest = swapRequests.find(
+          (req) =>
+            req.fromUserId === loggedInUser.id &&
+            req.toUserId === user.id &&
+            (req.status === "pending" || req.status === "accepted")
+        );
+        if (existingRequest) {
+          alert("You already have a pending or accepted swap request with this user.");
+          return;
+        }
+
+        // Create new swap request
+        const newRequest = {
+          id: swapRequests.length + 1,
+          fromUserId: loggedInUser.id,
+          toUserId: user.id,
+          status: "pending",
+          timestamp: Date.now(),
+          feedback: null,
+        };
+        swapRequests.push(newRequest);
+
+        alert(`Swap request sent to ${user.name}.`);
+
+        showSwapRequestsModalIfAny();
+      }
+
+      /**
+       * Shows the swap requests modal if logged in and any requests exist (pending or current).
+       */
+      function showSwapRequestsModalIfAny() {
+        if (!loggedInUser) return;
+        const myRequests = swapRequests.filter(
+          (req) => req.fromUserId === loggedInUser.id || req.toUserId === loggedInUser.id
+        );
+        if (myRequests.length === 0) {
+          swapRequestsModal.classList.add("hidden");
+          return;
+        }
+        // Else fill modal with requests list and show it
+        renderSwapRequests(myRequests);
+        swapRequestsModal.classList.remove("hidden");
+      }
+
+      /**
+       * Renders the swap requests inside modal.
+       */
+      function renderSwapRequests(requests) {
+        swapRequestsContainer.innerHTML = "";
+        if (requests.length === 0) {
+          swapRequestsContainer.innerHTML = `<p class="text-center text-gray-600 select-none">No swap requests at the moment.</p>`;
+          return;
+        }
+
+        requests.forEach(req => {
+          const isFromUser = req.fromUserId === loggedInUser.id;
+          const otherUserId = isFromUser ? req.toUserId : req.fromUserId;
+          const otherUser = users.find(u => u.id === otherUserId);
+
+          const reqDiv = document.createElement("div");
+          reqDiv.className = "flex flex-col bg-gray-50 rounded p-3 shadow-sm";
+
+          const headerRow = document.createElement("div");
+          headerRow.className = "flex justify-between items-center mb-2";
+
+          const title = document.createElement("p");
+          title.className = "font-semibold text-indigo-700 flex-grow truncate";
+          title.textContent = isFromUser ?
+            `Your request to ${otherUser?.name ?? "Unknown User"}` :
+            `Request from ${otherUser?.name ?? "Unknown User"}`;
+          headerRow.appendChild(title);
+
+          // Show status with color-coded badge
+          const statusSpan = document.createElement("span");
+          statusSpan.className = "py-0.5 px-2 rounded font-semibold text-xs select-none ";
+          switch (req.status) {
+            case "pending":
+              statusSpan.textContent = "Pending";
+              statusSpan.classList.add("bg-yellow-200", "text-yellow-800");
+              break;
+            case "accepted":
+              statusSpan.textContent = "Accepted";
+              statusSpan.classList.add("bg-green-200", "text-green-800");
+              break;
+            case "rejected":
+              statusSpan.textContent = "Rejected";
+              statusSpan.classList.add("bg-red-200", "text-red-800");
+              break;
+          }
+          headerRow.appendChild(statusSpan);
+
+          reqDiv.appendChild(headerRow);
+
+          // Timestamp display
+          const date = new Date(req.timestamp);
+          const timeStr = date.toLocaleString(undefined, {
+            dateStyle: "medium",
+            timeStyle: "short",
+          });
+          const timeP = document.createElement("p");
+          timeP.className = "text-xs text-gray-400 mb-2 select-none";
+          timeP.textContent = `Requested on: ${timeStr}`;
+          reqDiv.appendChild(timeP);
+
+          // Feedback display and rating if any
+          if (req.feedback) {
+            const feedbackP = document.createElement("p");
+            feedbackP.className = "text-sm italic text-gray-600 mb-2";
+            feedbackP.textContent = `"${req.feedback.text}" - Rated ${req.feedback.rating}/5`;
+            reqDiv.appendChild(feedbackP);
+          }
+
+          // Actions container
+          const actionsDiv = document.createElement("div");
+          actionsDiv.className = "flex space-x-2";
+
+          // If logged user is receiver and request is pending, show accept/reject buttons
+          if (!isFromUser && req.status === "pending") {
+            // Accept button
+            const acceptBtn = document.createElement("button");
+            acceptBtn.className =
+              "bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm select-none";
+            acceptBtn.textContent = "Accept";
+            acceptBtn.addEventListener("click", () => {
+              req.status = "accepted";
+              alert(`You accepted the swap request from ${otherUser.name}.`);
+              renderSwapRequests(requests);
+              loadProfilesForPage(currentPage);
+            });
+            actionsDiv.appendChild(acceptBtn);
+
+            // Reject button
+            const rejectBtn = document.createElement("button");
+            rejectBtn.className =
+              "bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm select-none";
+            rejectBtn.textContent = "Reject";
+            rejectBtn.addEventListener("click", () => {
+              req.status = "rejected";
+              alert(`You rejected the swap request from ${otherUser.name}.`);
+              renderSwapRequests(requests);
+              loadProfilesForPage(currentPage);
+            });
+            actionsDiv.appendChild(rejectBtn);
+          }
+
+          // If logged user is the requester and request is pending, show delete button
+          if (isFromUser && req.status === "pending") {
+            const deleteBtn = document.createElement("button");
+            deleteBtn.className =
+              "bg-gray-400 hover:bg-gray-500 text-white px-3 py-1 rounded text-sm select-none";
+            deleteBtn.textContent = "Delete Request";
+            deleteBtn.addEventListener("click", () => {
+              if (confirm("Are you sure you want to delete this swap request?")) {
+                swapRequests = swapRequests.filter(r => r.id !== req.id);
+                alert("Swap request deleted.");
+                renderSwapRequests(swapRequests.filter(
+                  (r) => r.fromUserId === loggedInUser.id || r.toUserId === loggedInUser.id));
+                loadProfilesForPage(currentPage);
+              }
+            });
+            actionsDiv.appendChild(deleteBtn);
+          }
+
+          // If swap is accepted and logged user is requester, allow rating and feedback
+          if (isFromUser && req.status === "accepted" && !req.feedback) {
+            // Show feedback form
+            const feedbackForm = document.createElement("form");
+            feedbackForm.className = "flex items-center space-x-2 mt-3";
+
+            const feedbackInput = document.createElement("input");
+            feedbackInput.type = "text";
+            feedbackInput.placeholder = "Leave feedback...";
+            feedbackInput.required = true;
+            feedbackInput.maxLength = 120;
+            feedbackInput.className =
+              "flex-grow border border-gray-300 rounded px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500";
+
+            const ratingSelect = document.createElement("select");
+            ratingSelect.className =
+              "border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500";
+            ratingSelect.required = true;
+            ratingSelect.innerHTML = `
+              <option value="">Rating</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+            `;
+
+            const submitBtn = document.createElement("button");
+            submitBtn.type = "submit";
+            submitBtn.textContent = "Submit";
+            submitBtn.className =
+              "bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded text-sm select-none";
+
+            feedbackForm.appendChild(feedbackInput);
+            feedbackForm.appendChild(ratingSelect);
+            feedbackForm.appendChild(submitBtn);
+
+            feedbackForm.addEventListener("submit", (e) => {
+              e.preventDefault();
+              const feedbackText = feedbackInput.value.trim();
+              const ratingValue = parseInt(ratingSelect.value, 10);
+              if (!feedbackText || !ratingValue) {
+                alert("Please provide both feedback text and rating.");
+                return;
+              }
+              req.feedback = { text: feedbackText, rating: ratingValue };
+              alert("Thank you for your feedback!");
+              renderSwapRequests(requests);
+              loadProfilesForPage(currentPage);
+            });
+            actionsDiv.appendChild(feedbackForm);
+          }
+
+          reqDiv.appendChild(actionsDiv);
+
+          swapRequestsContainer.appendChild(reqDiv);
+        });
+      }
+
+      /* Event Listeners */
+      searchBtn.addEventListener("click", () => {
+        filterUsers();
+        loadProfilesForPage(1);
+      });
+      availabilityFilter.addEventListener("change", () => {
+        filterUsers();
+        loadProfilesForPage(1);
+      });
+
+      loginBtn.addEventListener("click", () => {
+        if (loggedInUser) {
+          if (confirm("Logout?")) {
+            loggedInUser = null;
+            updateLoginStatusUI();
+            filterUsers();
+            loadProfilesForPage(1);
+            swapRequestsModal.classList.add("hidden");
+          }
+        } else {
+          openLoginModal();
+        }
+      });
+
+      closeLoginModalBtn.addEventListener("click", closeLoginModal);
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          if (!loginModal.classList.contains("hidden")) closeLoginModal();
+          if (!swapRequestsModal.classList.contains("hidden")) swapRequestsModal.classList.add("hidden");
+        }
+      });
+
+      loginForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const username = e.target.username.value.trim();
+        const password = e.target.password.value.trim();
+        if (!username || !password) {
+          alert("Please enter username and password.");
+          return;
+        }
+        doLogin(username, password);
+      });
+
+      closeSwapRequestsModal.addEventListener("click", () => {
+        swapRequestsModal.classList.add("hidden");
+      });
+
+      /* Initialization */
+      // Smooth fadeIn animation keyframes for modal
+      const styleTag = document.createElement("style");
+      styleTag.textContent = `
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-5px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .animate-fadeIn {
+        animation: fadeIn 0.3s ease forwards;
+      }
+      `;
+      document.head.appendChild(styleTag);
+
+      // Show first time user filtered list (only public)
+      filterUsers();
+      loadProfilesForPage(1);
+      updateLoginStatusUI();
+    })();
+  </script>
+</body>
+
+</html>
+
